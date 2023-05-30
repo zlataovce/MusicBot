@@ -55,6 +55,7 @@ public class Bot
     private JDA jda;
     private GUI gui;
 
+    private final Object accessRenewLock = new Object();
     private long accessExpireMillis = -1;
     
     public Bot(EventWaiter waiter, BotConfig config, SettingsManager settings)
@@ -121,16 +122,18 @@ public class Bot
     public SpotifyApi getSpotifyClient() {
         if (this.spotifyClient == null) return null;
 
-        try {
-            final long currentTime = System.currentTimeMillis();
-            if (this.accessExpireMillis < currentTime) {
-                final ClientCredentials creds = this.spotifyClient.clientCredentials().build().execute();
+        synchronized (accessRenewLock) {
+            try {
+                final long currentTime = System.currentTimeMillis();
+                if (this.accessExpireMillis < currentTime) {
+                    final ClientCredentials creds = this.spotifyClient.clientCredentials().build().execute();
 
-                this.accessExpireMillis = currentTime + (creds.getExpiresIn() * 1000);
-                this.spotifyClient.setAccessToken(creds.getAccessToken());
+                    this.accessExpireMillis = currentTime + (creds.getExpiresIn() * 1000);
+                    this.spotifyClient.setAccessToken(creds.getAccessToken());
+                }
+            } catch (IOException | ParseException | SpotifyWebApiException e) {
+                new RuntimeException("Failed to update access token", e).printStackTrace();
             }
-        } catch (IOException | ParseException | SpotifyWebApiException e) {
-            new RuntimeException("Failed to update access token", e).printStackTrace();
         }
 
         return this.spotifyClient;
