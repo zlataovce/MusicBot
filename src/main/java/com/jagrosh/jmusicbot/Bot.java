@@ -15,6 +15,7 @@
  */
 package com.jagrosh.jmusicbot;
 
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -29,6 +30,10 @@ import java.util.Objects;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import org.apache.hc.core5.http.ParseException;
+import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
 
 /**
  *
@@ -44,10 +49,13 @@ public class Bot
     private final PlaylistLoader playlists;
     private final NowplayingHandler nowplaying;
     private final AloneInVoiceHandler aloneInVoiceHandler;
+    private final SpotifyApi spotifyClient;
     
     private boolean shuttingDown = false;
     private JDA jda;
     private GUI gui;
+
+    private long accessExpireMillis = -1;
     
     public Bot(EventWaiter waiter, BotConfig config, SettingsManager settings)
     {
@@ -62,6 +70,12 @@ public class Bot
         this.nowplaying.init();
         this.aloneInVoiceHandler = new AloneInVoiceHandler(this);
         this.aloneInVoiceHandler.init();
+        this.spotifyClient = config.getSpotifyClientId().length() != 0 && config.getSpotifyClientSecret().length() != 0
+                ? SpotifyApi.builder()
+                    .setClientId(config.getSpotifyClientId())
+                    .setClientSecret(config.getSpotifyClientSecret())
+                    .build()
+                : null;
     }
     
     public BotConfig getConfig()
@@ -102,6 +116,10 @@ public class Bot
     public AloneInVoiceHandler getAloneInVoiceHandler()
     {
         return aloneInVoiceHandler;
+    }
+
+    public SpotifyApi getSpotifyClient() {
+        return spotifyClient;
     }
     
     public JDA getJDA()
@@ -157,5 +175,14 @@ public class Bot
     public void setGUI(GUI gui)
     {
         this.gui = gui;
+    }
+
+    public void refreshSpotifyToken() throws IOException, ParseException, SpotifyWebApiException {
+        if (this.accessExpireMillis < System.currentTimeMillis()) {
+            final ClientCredentials creds = this.spotifyClient.clientCredentials().build().execute();
+
+            this.accessExpireMillis = System.currentTimeMillis() + (creds.getExpiresIn() * 1000);
+            this.spotifyClient.setAccessToken(creds.getAccessToken());
+        }
     }
 }

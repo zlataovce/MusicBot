@@ -30,10 +30,21 @@ import com.jagrosh.jmusicbot.commands.DJCommand;
 import com.jagrosh.jmusicbot.commands.MusicCommand;
 import com.jagrosh.jmusicbot.playlist.PlaylistLoader.Playlist;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.exceptions.PermissionException;
+import org.apache.hc.core5.http.ParseException;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.exceptions.detailed.BadRequestException;
+import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
+import se.michaelthelin.spotify.model_objects.specification.Track;
 
 /**
  *
@@ -87,7 +98,57 @@ public class PlayCmd extends MusicCommand
         String args = event.getArgs().startsWith("<") && event.getArgs().endsWith(">") 
                 ? event.getArgs().substring(1,event.getArgs().length()-1) 
                 : event.getArgs().isEmpty() ? event.getMessage().getAttachments().get(0).getUrl() : event.getArgs();
-        event.reply(loadingEmoji+" Loading... `["+args+"]`", m -> bot.getPlayerManager().loadItemOrdered(event.getGuild(), args, new ResultHandler(m,event,false)));
+
+        final String spotifyTrackId;
+        if (bot.getSpotifyClient() != null && args.startsWith("https://open.spotify.com/track/")) {
+            final int questionMarkIndex = args.lastIndexOf('?');
+
+            spotifyTrackId = args.substring("https://open.spotify.com/track/".length(), questionMarkIndex == -1 ? args.length() : questionMarkIndex);
+        } else {
+            spotifyTrackId = null;
+        }
+
+        event.reply(loadingEmoji+(spotifyTrackId != null ? "Loading a Spotify track... `["+spotifyTrackId+"]`" : "Loading... `["+args+"]`"), m -> {
+            final ResultHandler handler = new ResultHandler(m,event,false);
+
+            String args0 = args;
+            if (spotifyTrackId != null) {
+                try {
+                    bot.refreshSpotifyToken();
+                    final Track track = bot.getSpotifyClient().getTrack(spotifyTrackId)
+                            .build()
+                            .execute();
+
+                    args0 = track.getName() + " - " + Arrays.stream(track.getArtists())
+                            .map(ArtistSimplified::getName)
+                            .collect(Collectors.joining(", "));
+
+                    try {
+                        // hack args
+                        final Field field = event.getClass().getDeclaredField("args");
+                        field.setAccessible(true);
+
+                        field.set(event, args0);
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                } catch (IOException | ParseException e) {
+                    e.printStackTrace();
+                    handler.loadFailed(new FriendlyException("Failed to load Spotify track " + spotifyTrackId + ", internal error", Severity.COMMON, e));
+                    return;
+                } catch (SpotifyWebApiException e) {
+                    if (e instanceof BadRequestException) {
+                        handler.noMatches();
+                    } else {
+                        e.printStackTrace();
+                        handler.loadFailed(new FriendlyException("Failed to load Spotify track " + spotifyTrackId + ", Spotify API error", Severity.COMMON, e));
+                    }
+                    return;
+                }
+            }
+
+            bot.getPlayerManager().loadItemOrdered(event.getGuild(), args0, handler);
+        });
     }
     
     private class ResultHandler implements AudioLoadResultHandler

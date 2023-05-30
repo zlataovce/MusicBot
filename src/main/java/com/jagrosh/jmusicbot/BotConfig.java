@@ -40,7 +40,7 @@ public class BotConfig
     
     private Path path = null;
     private String token, prefix, altprefix, helpWord, playlistsFolder,
-            successEmoji, warningEmoji, errorEmoji, loadingEmoji, searchingEmoji;
+            successEmoji, warningEmoji, errorEmoji, loadingEmoji, searchingEmoji, spotifyClientId, spotifyClientSecret;
     private boolean stayInChannel, songInGame, npImages, updatealerts, useEval, dbots;
     private long owner, maxSeconds, aloneTimeUntilStop;
     private OnlineStatus status;
@@ -79,6 +79,8 @@ public class BotConfig
             errorEmoji = config.getString("error");
             loadingEmoji = config.getString("loading");
             searchingEmoji = config.getString("searching");
+            spotifyClientId = config.getString("spotifyclientid");
+            spotifyClientSecret = config.getString("spotifyclientsecret");
             game = OtherUtil.parseGame(config.getString("game"));
             status = OtherUtil.parseStatus(config.getString("status"));
             stayInChannel = config.getBoolean("stayinchannel");
@@ -259,6 +261,14 @@ public class BotConfig
     public String getSearching()
     {
         return searchingEmoji;
+    }
+
+    public String getSpotifyClientId() {
+        return spotifyClientId;
+    }
+
+    public String getSpotifyClientSecret() {
+        return spotifyClientSecret;
     }
     
     public Activity getGame()
