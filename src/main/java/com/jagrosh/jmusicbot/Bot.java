@@ -119,7 +119,21 @@ public class Bot
     }
 
     public SpotifyApi getSpotifyClient() {
-        return spotifyClient;
+        if (this.spotifyClient == null) return null;
+
+        try {
+            final long currentTime = System.currentTimeMillis();
+            if (this.accessExpireMillis < currentTime) {
+                final ClientCredentials creds = this.spotifyClient.clientCredentials().build().execute();
+
+                this.accessExpireMillis = currentTime + (creds.getExpiresIn() * 1000);
+                this.spotifyClient.setAccessToken(creds.getAccessToken());
+            }
+        } catch (IOException | ParseException | SpotifyWebApiException e) {
+            new RuntimeException("Failed to update access token", e).printStackTrace();
+        }
+
+        return this.spotifyClient;
     }
     
     public JDA getJDA()
@@ -175,14 +189,5 @@ public class Bot
     public void setGUI(GUI gui)
     {
         this.gui = gui;
-    }
-
-    public void refreshSpotifyToken() throws IOException, ParseException, SpotifyWebApiException {
-        if (this.accessExpireMillis < System.currentTimeMillis()) {
-            final ClientCredentials creds = this.spotifyClient.clientCredentials().build().execute();
-
-            this.accessExpireMillis = System.currentTimeMillis() + (creds.getExpiresIn() * 1000);
-            this.spotifyClient.setAccessToken(creds.getAccessToken());
-        }
     }
 }

@@ -52,10 +52,20 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
  */
 public class PlayCmd extends MusicCommand
 {
+    private static final Field ARGS_FIELD;
     private final static String LOAD = "\uD83D\uDCE5"; // 📥
     private final static String CANCEL = "\uD83D\uDEAB"; // 🚫
     
     private final String loadingEmoji;
+
+    static {
+        try {
+            ARGS_FIELD = CommandEvent.class.getDeclaredField("args");
+            ARGS_FIELD.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
     
     public PlayCmd(Bot bot)
     {
@@ -101,47 +111,40 @@ public class PlayCmd extends MusicCommand
 
         final String spotifyTrackId;
         if (bot.getSpotifyClient() != null && args.startsWith("https://open.spotify.com/track/")) {
-            final int questionMarkIndex = args.lastIndexOf('?');
+            final int queryIndex = args.lastIndexOf('?');
 
-            spotifyTrackId = args.substring("https://open.spotify.com/track/".length(), questionMarkIndex == -1 ? args.length() : questionMarkIndex);
+            spotifyTrackId = args.substring("https://open.spotify.com/track/".length(), queryIndex == -1 ? args.length() : queryIndex);
         } else {
             spotifyTrackId = null;
         }
 
         event.reply(loadingEmoji+(spotifyTrackId != null ? "Loading a Spotify track... `["+spotifyTrackId+"]`" : "Loading... `["+args+"]`"), m -> {
-            final ResultHandler handler = new ResultHandler(m,event,false);
+            final ResultHandler handler = new ResultHandler(m, event,false);
 
             String args0 = args;
             if (spotifyTrackId != null) {
                 try {
-                    bot.refreshSpotifyToken();
-                    final Track track = bot.getSpotifyClient().getTrack(spotifyTrackId)
-                            .build()
-                            .execute();
+                    final Track track = bot.getSpotifyClient().getTrack(spotifyTrackId).build().execute();
 
                     args0 = track.getName() + " - " + Arrays.stream(track.getArtists())
                             .map(ArtistSimplified::getName)
                             .collect(Collectors.joining(", "));
 
                     try {
-                        // hack args
-                        final Field field = event.getClass().getDeclaredField("args");
-                        field.setAccessible(true);
-
-                        field.set(event, args0);
-                    } catch (NoSuchFieldException | IllegalAccessException e) {
+                        ARGS_FIELD.set(event, args0); // hack CommandEvent for profit
+                    } catch (IllegalAccessException e) {
                         throw new RuntimeException(e);
                     }
                 } catch (IOException | ParseException e) {
-                    e.printStackTrace();
                     handler.loadFailed(new FriendlyException("Failed to load Spotify track " + spotifyTrackId + ", internal error", Severity.COMMON, e));
+                    e.printStackTrace();
                     return;
                 } catch (SpotifyWebApiException e) {
                     if (e instanceof BadRequestException) {
                         handler.noMatches();
                     } else {
-                        e.printStackTrace();
                         handler.loadFailed(new FriendlyException("Failed to load Spotify track " + spotifyTrackId + ", Spotify API error", Severity.COMMON, e));
+                        e.printStackTrace();
                     }
                     return;
                 }
