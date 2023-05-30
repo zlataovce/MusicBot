@@ -9,4 +9,5 @@ FROM eclipse-temurin:17-jre-jammy
 
 COPY --from=build /app/target/JMusicBot-*-All.jar /app/JMusicBot.jar
 
+WORKDIR /config
 ENTRYPOINT ["java", "-Dnogui=true", "-jar", "/app/JMusicBot.jar"]
