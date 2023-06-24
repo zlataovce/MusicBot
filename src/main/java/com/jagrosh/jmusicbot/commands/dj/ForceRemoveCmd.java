@@ -77,7 +77,12 @@ public class ForceRemoveCmd extends DJCommand
             for(int i=0; i<found.size() && i<4; i++)
             {
                 Member member = found.get(i);
-                builder.addChoice("**"+member.getUser().getName()+"**#"+member.getUser().getDiscriminator());
+
+                if (!member.getUser().getDiscriminator().equals("0000")) {
+                    builder.addChoice("**"+member.getUser().getName()+"**#"+member.getUser().getDiscriminator());
+                } else {
+                    builder.addChoice("**"+member.getUser().getName()+"**");
+                }
             }
 
             builder
@@ -113,7 +118,11 @@ public class ForceRemoveCmd extends DJCommand
         }
         else
         {
-            event.replySuccess("Successfully removed `"+count+"` entries from **"+target.getName()+"**#"+target.getDiscriminator()+".");
+            if (!target.getDiscriminator().equals("0000")) {
+                event.replySuccess("Successfully removed `"+count+"` entries from **"+target.getName()+"**#"+target.getDiscriminator()+".");
+            } else {
+                event.replySuccess("Successfully removed `"+count+"` entries from **"+target.getName()+"**.");
+            }
         }
     }
 }

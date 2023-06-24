@@ -35,9 +35,9 @@
             <version>4.4.1_353</version>
         </dependency>
         <dependency>
-            <groupId>com.jagrosh</groupId>
-            <artifactId>jda-utilities</artifactId>
-            <version>3.0.5</version>
+            <groupId>com.github.zlataovce</groupId>
+            <artifactId>JDA-Chewtils</artifactId>
+            <version>v1-legacy-SNAPSHOT</version>
             <type>pom</type>
         </dependency>
 
