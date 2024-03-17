@@ -174,7 +174,6 @@ public class Bot
                 {
                     ah.stopAndClear();
                     ah.getPlayer().destroy();
-                    nowplaying.updateTopic(g.getIdLong(), ah, true);
                 }
             });
             jda.shutdown();
