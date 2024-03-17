@@ -35,9 +35,9 @@
             <version>4.4.1_353</version>
         </dependency>
         <dependency>
-            <groupId>com.github.zlataovce</groupId>
-            <artifactId>JDA-Chewtils</artifactId>
-            <version>v1-legacy-SNAPSHOT</version>
+            <groupId>com.github.zlataovce.JDA-Chewtils</groupId>
+            <artifactId>jda-chewtils</artifactId>
+            <version>beefc67df2</version>
             <type>pom</type>
         </dependency>
 
