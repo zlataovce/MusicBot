@@ -57,11 +57,11 @@
             <artifactId>lavaplayer</artifactId>
             <version>727959e9f621fc457b3a5adafcfffb55fdeaa538-SNAPSHOT</version>
         </dependency>
-	<dependency>
-	    <groupId>com.github.jagrosh</groupId>
-	    <artifactId>JLyrics</artifactId>
-	    <version>master-SNAPSHOT</version>
-	</dependency>
+        <dependency>
+            <groupId>com.github.jagrosh</groupId>
+            <artifactId>JLyrics</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>com.dunctebot</groupId>
             <artifactId>sourcemanagers</artifactId>
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>se.michaelthelin.spotify</groupId>
             <artifactId>spotify-web-api-java</artifactId>
-            <version>8.0.0</version>
+            <version>8.3.6</version>
         </dependency>
 
         <!-- Misc Internal Dependencies -->
